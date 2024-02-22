@@ -1,0 +1,5 @@
+subnet6 @@PREFIX@@::/@@PREFIXLEN@@ {
+##	range6 @@PREFIX@@::1000 @@PREFIX@@::1010;
+        option dhcp6.name-servers @@NAMESERVER@@;
+	option dhcp6.domain-search "domain.@@IFNAME@@.example";
+}

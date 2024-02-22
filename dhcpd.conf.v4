@@ -1,0 +1,6 @@
+subnet 192.168.0.0 netmask 255.255.255.0 {
+        range 192.168.0.8 192.168.0.20;
+        option routers 192.168.0.1;
+	option domain-name "eject.org";
+	option domain-name-servers 192.168.0.1, 192.168.0.2;
+}

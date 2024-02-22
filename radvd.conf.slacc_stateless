@@ -1,0 +1,38 @@
+
+interface @@IFNAME@@
+{
+	AdvSendAdvert on;
+	# Note: {Min,Max}RtrAdvInterval cannot be obtained with radvdump
+	AdvReachableTime 0;
+	AdvRetransTimer 0;
+	AdvCurHopLimit 64;
+	AdvDefaultLifetime 9000;
+	AdvHomeAgentFlag off;
+	AdvDefaultPreference medium;
+	AdvSourceLLAddress on;
+
+	# M=0 AdvManagedFlag
+	AdvManagedFlag off;
+	# O=x AdvOtherConfigFlag
+	AdvOtherConfigFlag on;
+
+	prefix @@PREFIX_ADDR@@
+	{
+		AdvValidLifetime 14400;
+		AdvPreferredLifetime 12600;
+		AdvOnLink on;
+		# A=1 AdvAutonomous
+		AdvAutonomous on;
+		AdvRouterAddr on;
+	}; # End of prefix definition
+};
+
+# A	Autoconfig flag	Get v6address prefix from RA
+# M	Managed flag	Get statefull DHCPv6 address
+# O	Other flag	Get other address from DHCPv6
+
+# SLACC+RDNSS		A=1, M=0, O=0		prefix & DNS from router
+# SLACC+stateless	A=1, M=0, O=1		prefix from router, DNS from DHCPv6
+# SLACC+statefull	A=1, M=1, O=NC		address from router & DHCPv6 (2 address)
+# statefull		A=0, M=1, O=NC		address & DNS from DHCPv6
+

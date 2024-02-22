@@ -1,0 +1,171 @@
+
+・IP ADDRESS の割当パターン
+
+SLAAC ステートレスDHCPv6 (ADDRESSは自分で割り当て、DHCPサーバーが介在するわけではない)
+ステートフルDHCPv6 (DHCPサーバーで管理されるADDRESSを割り当ててもらう))
+リンクドローカル (ローカルネット用ADDRESSを自分で割り当て、ff80:)
+MANUAL
+
+・DNS の割当パターン
+
+ステートレスDHCPv6 (IP ADDRESSを管理せず、DNSのみをDHCPサーバーが配布)
+ステートフルDHCPv6 (IP ADDRESSとDNSのみをDHCPサーバーが配布)
+RDNSSオプションを含むRA(RFC8106)
+MANUAL
+
+------------------- IP ADDRESS + DNS
+SLAAC + ステートレスDHCPv6			DHCPサーバーはクライアントのIP ADDRESSを管理しない
+SLAAC + RDNSSオプションを含むRA(RFC8106)
+ステートフルDHCPv6 + ステートフルDHCPv6		DHCPサーバーはクライアントのIP ADDRESSを管理する
+MANUAL
+リンクドローカル
+
+AndroidはDHCPv6非サポート。ならばうちもしなくてよいのでは？
+
+
+------------------ Linuxの設定画面例 (ubuntu18)
+
+IPV6 Method = Automatic / Automatic, DHCP only / Linked-Local only
+
+●Automatic
+	DNS 		Automatic ON/OFF[          ]
+	Routes 		Automatic ON/OFF[          ]
+ 	  (□check) Use this connection only for resources on its network
+
+	★ADDRESS=SLAAC ステートレスDHCPv6 + ステートフルDHCPv6
+	(DHCPv6が動いていなければ、SLAACとLinked-LocalでIPアドレスが２個振られる）
+	(DHCPv6が動いていたら、IPアドレスが計３個振られる）
+	★DNS Automatic ON ->ステートレスDHCPv6 または RDNSSオプションを含むRA(RFC8106)
+	  ↑両方TRYして返事があったあどれすを使うのかな？
+
+●Automatic, DHCP only
+	DNS 		Automatic ON/OFF[          ]
+	Routes 		Automatic ON/OFF[          ]
+ 	  (□check) Use this connection only for resources on its network
+
+	★ADDRESS=ステートフルDHCPv6
+	(DHCPv6が動いていたら、IPアドレスが１個振られる）
+	★DNS Automatic ON ->ステートフルDHCPv6
+
+●Linked-Local only
+★ADDRESS=LINKED-LOCAL
+	DNS 		Automatic ON/OFF  ※No manual input
+	Routes 		Automatic ON/OFF  ※No manual input
+
+	★ADDRESS=SLAAC ステートレスDHCP
+	★DNS Automatic ON ->ステートレスDHCPv6 または RDNSSオプションを含むRA(RFC8106)
+
+●Manual
+★ADDRESS=MANUAL
+	Address		[          ]
+	DNS 		Automatic ON/OFF[          ]
+	Routes 		Automatic ON/OFF[          ]
+ 	  (□check) Use this connection only for resources on its network
+
+	★ADDRESS=SLAAC ステートレスDHCPv6
+	★DNS Automatic ON ->ステートレスDHCPv6 または RDNSSオプションを含むRA(RFC8106)
+
+●Disable
+★IPV6を使わないときは、これを選択
+
+
+★疑問 Routesが自動でもアドレス設定できるが、どういう動きになるのか？
+★Use this connection only for resources on its network が、実際にどう作用するのかがわからない
+
+------------------ 自宅実動作調査
+●Automatic
+eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 192.168.1.222  netmask 255.255.255.0  broadcast 192.168.1.255
+        inet6 fe80::7110:cf27:9d7f:d0ab  prefixlen 64  scopeid 0x20<link>
+        inet6 2400:4150:6263:1d00:ed95:6bcc:4478:6623  prefixlen 64  scopeid 0x0<global>
+        inet6 2400:4150:6263:1d00:def6:31a:bcb:6043  prefixlen 64  scopeid 0x0<global>
+        inet6 2001:a250:6269:600:ed95:6bcc:4478:6623  prefixlen 64  scopeid 0x0<global>
+        inet6 2001:a250:6269:600:d4a5:b94d:741e:9ae1  prefixlen 64  scopeid 0x0<global>
+
+ルーターが2台あるので、2系統取れている？ さらにx2で4個振られている意味がわからん
+
+●Automatic, DHCP only
+eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 192.168.1.222  netmask 255.255.255.0  broadcast 192.168.1.255
+        inet6 fe80::7110:cf27:9d7f:d0ab  prefixlen 64  scopeid 0x20<link>
+
+※ステートフルDHCPv6サーバーがいないので、IPV6アドレスがリンクドローカルしかない状況？
+
+●Linked-Local only
+eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 192.168.1.222  netmask 255.255.255.0  broadcast 192.168.1.255
+        inet6 fe80::7110:cf27:9d7f:d0ab  prefixlen 64  scopeid 0x20<link>
+
+
+
+●自宅Windows10
+イーサネット アダプター 有線:
+
+   接続固有の DNS サフィックス . . . . .: flets-west.jp
+   IPv6 アドレス . . . . . . . . . . . .: 2001:a250:6269:600:40eb:d6c4:486d:e884
+   IPv6 アドレス . . . . . . . . . . . .: 2400:4150:6263:1d00:40eb:d6c4:486d:e884
+   一時 IPv6 アドレス. . . . . . . . . .: 2001:a250:6269:600:d1d9:ec82:f274:66ad
+   一時 IPv6 アドレス. . . . . . . . . .: 2001:a250:6269:600:dd68:c857:5e11:f8fc
+   一時 IPv6 アドレス. . . . . . . . . .: 2400:4150:6263:1d00:d1d9:ec82:f274:66ad
+   一時 IPv6 アドレス. . . . . . . . . .: 2400:4150:6263:1d00:dd68:c857:5e11:f8fc	←外部のWEBサーバーからはこれで見えるらしい
+   リンクローカル IPv6 アドレス. . . . .: fe80::40eb:d6c4:486d:e884%18
+   IPv4 アドレス . . . . . . . . . . . .: 192.168.1.6
+   サブネット マスク . . . . . . . . . .: 255.255.255.0
+   デフォルト ゲートウェイ . . . . . . .: fe80::225:36ff:fe6f:abab%18
+                                          fe80::2a0:deff:fec8:f7d5%18
+                                          192.168.1.1
+☆設定は、アドレスもDNSも自動取得
+☆なお、会社PCはリンクローカルしか振られていない模様
+☆一時 IPv6 アドレスは、匿名アドレスと呼ばれる IPv6 アドレスで、24h または PC 再起動時にアドレスが変更される
+  使い捨ての IPv6 アドレスです。 実際の通信は、この一時 IPv6 アドレスが使用され、クライアント PC の匿名性を担保しています。
+
+・ルーター側情報(RT-500KI)
+DHCPv6サーバ払い出し状況
+[ 配布情報 ]
+DNSサーバアドレス	2001:a250:6269:600:225:36ff:fe6f:abab
+SIPサーバアドレス	2001:a250:6269:600:225:36ff:fe6f:abab
+内線REGISTERドメイン	ntt-west.ne.jp
+
+ＤＨＣＰｖ６サーバー払い出し状況のリストは空、フレッツ側のアドレスがローカルに振られているのか？
+
+
+・ルーター側情報(WXR-1900DHP3)
+	
+IPv6接続方法	IPv6ブリッジ接続
+IPv6接続状態	IPv6ブリッジ
+グローバルアドレス
+	2001:a250:6269:600:363d:c4ff:fe59:340e
+ 	2400:4150:6263:1d00:363d:c4ff:fe59:340e
+IPv6デフォルトゲートウェイ
+	fe80::2a0:deff:fec8:f7d5 (自動取得)
+DNS1(プライマリー)
+	2400:4150:6263:1d00::1 (自動取得)
+LAN側Link Localアドレス
+	fe80::363d:c4ff:fe59:340e
+サブネットID	0000
+インターフェースID	363d:c4ff:fe59:340e
+無線 (2.4 GHz)	
+無線状態	制限なし
+
+------------------ ipv4 -> ipv4/v6
+inet_addr(), inet_ntoa(), gethostbyname()
+-> inet_pton(), inet_ntop(), getaddrinfo()
+
+
+------------------ word
+IPv4/IPv6 Dual Stack
+NDP Neighbor Discovery Protocol 近隣探索 RFC4861
+RA Router Advertisement
+RS Router Splicitation
+NA Network Advertisement
+NS Network Splicitation
+DAD 
+ICMP
+DHCPv6-PD
+
+
+
+RFC8305	Happy Eyeballs v4/v6選択
+RFC6724 デフォルトアドレス選択
+RFC8106 RAの話、IPv6 Router Advertisement Options for DNS Configuration
+
