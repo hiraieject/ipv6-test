@@ -1,10 +1,12 @@
+-include ~/.dotfiles/.makefile.gitbase.inc
+
 MAKEFLAGS += --no-print-directory
 
 -include /tmp/if.inc
 
-SERVER1_DEV = eth2
-SERVER2_DEV = eth3
-CLIENT_DEV = eth4
+SERVER1_DEV = ens38
+SERVER2_DEV = ens39
+CLIENT_DEV = ens40
 
 SERVER1_V6PREFIX=2010:db8:0:1
 SERVER2_V6PREFIX=2110:db8:0:1
@@ -29,6 +31,7 @@ help:
 	@echo 'make status_loop'
 	@echo 'make status'
 	@echo 'make dump'
+	@echo 'make tool_install'
 
 log:
 	journalctl -xe
@@ -173,11 +176,11 @@ update_if:
 	make ADDRESS=$(SERVER1_V6ADDR)/$(SERVER1_V6PREFIXLEN) DEVICE=$(SERVER1_DEV) v6_set_address
 	make ADDRESS=$(SERVER2_V6ADDR)/$(SERVER2_V6PREFIXLEN) DEVICE=$(SERVER2_DEV) v6_set_address
 
-	@echo -n '' > /tmp/if.inc
-	@echo -n 'SERVER1_V6LLAD=' >> /tmp/if.inc
-	@ifconfig $(SERVER1_DEV) | grep fe80 | awk '{print $$2}' >> /tmp/if.inc
-	@echo -n 'SERVER2_V6LLAD=' >> /tmp/if.inc
-	@ifconfig $(SERVER2_DEV) | grep fe80 | awk '{print $$2}' >> /tmp/if.inc
+	echo -n '' > /tmp/if.inc
+	echo -n 'SERVER1_V6LLAD=' >> /tmp/if.inc
+	ifconfig $(SERVER1_DEV) | grep fe80 | awk '{print $$2}' | head -1 >> /tmp/if.inc
+	echo -n 'SERVER2_V6LLAD=' >> /tmp/if.inc
+	ifconfig $(SERVER2_DEV) | grep fe80 | awk '{print $$2}' | head -1 >> /tmp/if.inc
 
 ## -------------------------------------------------------------------------
 reset_configfile:
@@ -553,16 +556,26 @@ v4_set_addr2:
 	-sudo ip -4 addr add 192.168.1.51 dev eth0 
 
 ## ------------------------- 
-stop_NetworkManager:
-	sudo systemctl stop NetworkManager.service
+# stop_NetworkManager:
+# 	sudo systemctl stop NetworkManager.service
 
 ## ------------------------- 
-setup:
+tool_install:
 	sudo apt update
 	sudo apt install isc-dhcp-server		# DHCPサーバー
 	sudo apt install isc-dhcp-client		# DHCPクライアント
 	sudo apt install radvd radvdump			# ルーター通知デーモン
 ##	sudo apt install zebra				# ルーティングデーモン
+
+change_network_managet_setting:
+	sudo make _change_network_managet_setting
+_change_network_managet_setting:
+	echo '' >> /etc/NetworkManager/NetworkManager.conf
+	echo '[keyfile]' >> /etc/NetworkManager/NetworkManager.conf
+	echo 'unmanaged-devices=interface-name:$(SERVER1_DEV)' >> /etc/NetworkManager/NetworkManager.conf
+	echo 'unmanaged-devices=interface-name:$(SERVER2_DEV)' >> /etc/NetworkManager/NetworkManager.conf
+	echo 'unmanaged-devices=interface-name:$(CLIENT_DEV)'  >> /etc/NetworkManager/NetworkManager.conf
+	systemctl restart NetworkManager
 
 
 ### EQ1
