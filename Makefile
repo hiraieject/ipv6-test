@@ -1,53 +1,34 @@
+MAKEFLAGS += --no-print-directory
+
 -include /tmp/if.inc
 
-ETH0V6PREFIX=2010:db8:0:1
-ETH1V6PREFIX=2110:db8:0:1
-#ETH2V6PREFIX=2210:db8:0:1
-#ETH3V6PREFIX=2310:db8:0:1
-#ETH4V6PREFIX=2410:db8:0:1
-#ETH5V6PREFIX=2510:db8:0:1
-#ETH6V6PREFIX=2610:db8:0:1
-#ETH7V6PREFIX=2710:db8:0:1
+SERVER1_DEV = eth2
+SERVER2_DEV = eth3
+CLIENT_DEV = eth4
 
-ETH0V6PREFIXLEN=64
-ETH1V6PREFIXLEN=64
-#ETH2V6PREFIXLEN=64
-#ETH3V6PREFIXLEN=64
-#ETH4V6PREFIXLEN=64
-#ETH5V6PREFIXLEN=64
-#ETH6V6PREFIXLEN=64
-#ETH7V6PREFIXLEN=64
+SERVER1_V6PREFIX=2010:db8:0:1
+SERVER2_V6PREFIX=2110:db8:0:1
 
-ETH0V6ADDR=$(ETH0V6PREFIX)::1
-ETH1V6ADDR=$(ETH1V6PREFIX)::1
-#ETH2V6ADDR=$(ETH2V6PREFIX)::1
-#ETH3V6ADDR=$(ETH3V6PREFIX)::1
-#ETH4V6ADDR=$(ETH4V6PREFIX)::1
-#ETH5V6ADDR=$(ETH5V6PREFIX)::1
-#ETH6V6ADDR=$(ETH6V6PREFIX)::1
-#ETH7V6ADDR=$(ETH7V6PREFIX)::1
+SERVER1_V6PREFIXLEN=64
+SERVER2_V6PREFIXLEN=64
 
-ETH0V6LLAD=$(ETH0V6PREFIX)::1
-ETH1V6LLAD=$(ETH1V6PREFIX)::1
-#ETH2V6LLAD=$(ETH2V6PREFIX)::1
-#ETH3V6LLAD=$(ETH3V6PREFIX)::1
-#ETH4V6LLAD=$(ETH4V6PREFIX)::1
-#ETH5V6LLAD=$(ETH5V6PREFIX)::1
-#ETH6V6LLAD=$(ETH6V6PREFIX)::1
-#ETH7V6LLAD=$(ETH7V6PREFIX)::1
+SERVER1_V6ADDR=$(SERVER1_V6PREFIX)::1
+SERVER2_V6ADDR=$(SERVER2_V6PREFIX)::1
+
+SERVER1_V6LLAD=$(SERVER1_V6PREFIX)::1
+SERVER2_V6LLAD=$(SERVER2_V6PREFIX)::1
 
 .PHONY: help
 
 help:
-	@echo make start_StatefullDhcp
-	@echo make start_StatelessDhcp
-	@echo make start_StatelessRdnss
-	@echo make start_StatelessRdnss_StatefullDHCP
-	@echo make start_StatelessRdnssX2
-	@echo make status_loop
-	@echo make status
-	@echo make
-	@echo make dump
+	@echo 'make start_StatefullDhcp'
+	@echo 'make start_StatelessDhcp'
+	@echo 'make start_StatelessRdnss'
+	@echo 'make start_StatelessRdnss_StatefullDHCP'
+	@echo 'make start_StatelessRdnssX2'
+	@echo 'make status_loop'
+	@echo 'make status'
+	@echo 'make dump'
 
 log:
 	journalctl -xe
@@ -55,98 +36,99 @@ dump:
 	sudo radvdump
 
 ## ------------------------------------------------------------------------- main targets
+
+## - - - - - - - - - - - - - - 
 start_StatefullDhcp:
 	make update_if
+	make _start_StatefullDhcp
+
+_start_StatefullDhcp:
 	make reset_configfile
 
 #DHCPv6 v6 address and DNS address
-	make DEVICE=eth0 PREFIX=$(ETH0V6PREFIX) PREFIXLEN=$(ETH0V6PREFIXLEN) conf_radvd_statefullDhcp
-	make DEVICE=eth0 PREFIX=$(ETH0V6PREFIX) PREFIXLEN=$(ETH0V6PREFIXLEN) NAMESERVER=$(ETH0V6ADDR) conf_dhcpd6_statefull
-	make DEVICE=eth0 conf_dhcpd4
-	make DEVICE=eth0 OPTIONS="" conf_dhcpd_default
+	make DEVICE=$(SERVER1_DEV) PREFIX=$(SERVER1_V6PREFIX) PREFIXLEN=$(SERVER1_V6PREFIXLEN) conf_radvd_statefullDhcp
+	make DEVICE=$(SERVER1_DEV) PREFIX=$(SERVER1_V6PREFIX) PREFIXLEN=$(SERVER1_V6PREFIXLEN) NAMESERVER=$(SERVER1_V6ADDR) conf_dhcpd6_statefull
+	make DEVICE=$(SERVER1_DEV) conf_dhcpd4
+	make DEVICE=$(SERVER1_DEV) OPTIONS="" conf_dhcpd_default
 
 	make v6_start_radvd
 	make v6_start_dhcpd
 	make v4_start_dhcpd
 
+## - - - - - - - - - - - - - - 
 start_StatelessDhcp:
 	make update_if
+	make _start_StatelessDhcp
+
+_start_StatelessDhcp:
 	make reset_configfile
 
 #Slacc v6 address + DHCPv6 DNS server address
-	make DEVICE=eth0 PREFIX=$(ETH0V6PREFIX) PREFIXLEN=$(ETH0V6PREFIXLEN) conf_radvd_slacc_statelessDhcp
-	make DEVICE=eth0 PREFIX=$(ETH0V6PREFIX) PREFIXLEN=$(ETH0V6PREFIXLEN) NAMESERVER=$(ETH0V6ADDR) conf_dhcpd6_stateless
-	make DEVICE=eth0 conf_dhcpd4
-	make DEVICE=eth0 OPTIONS="" conf_dhcpd_default
+	make DEVICE=$(SERVER1_DEV) PREFIX=$(SERVER1_V6PREFIX) PREFIXLEN=$(SERVER1_V6PREFIXLEN) conf_radvd_slacc_statelessDhcp
+	make DEVICE=$(SERVER1_DEV) PREFIX=$(SERVER1_V6PREFIX) PREFIXLEN=$(SERVER1_V6PREFIXLEN) NAMESERVER=$(SERVER1_V6ADDR) conf_dhcpd6_stateless
+	make DEVICE=$(SERVER1_DEV) conf_dhcpd4
+	make DEVICE=$(SERVER1_DEV) OPTIONS="" conf_dhcpd_default
 
 	make v6_start_radvd
 	make v6_start_dhcpd
 	make v4_start_dhcpd
 
+## - - - - - - - - - - - - - - 
 start_StatelessRdnss:
 	make update_if
+	make _start_StatelessRdnss
+
+_start_StatelessRdnss:
 	make reset_configfile
 
 #Slacc v6 address / RDNSS DNS server address
-	make DEVICE=eth0 PREFIX=$(ETH0V6PREFIX) PREFIXLEN=$(ETH0V6PREFIXLEN) RDNSSADDR=$(ETH0V6LLAD) conf_radvd_slacc_rdnss
-	make DEVICE=eth0 conf_dhcpd4
-	make DEVICE=eth0 OPTIONS="" conf_dhcpd_default
+	make DEVICE=$(SERVER1_DEV) PREFIX=$(SERVER1_V6PREFIX) PREFIXLEN=$(SERVER1_V6PREFIXLEN) RDNSSADDR=$(SERVER1_V6LLAD) conf_radvd_slacc_rdnss
+	make DEVICE=$(SERVER1_DEV) conf_dhcpd4
+	make DEVICE=$(SERVER1_DEV) OPTIONS="" conf_dhcpd_default
 
 	make v6_start_radvd
 	make v6_stop_dhcpd
 	make v4_start_dhcpd
 
+## - - - - - - - - - - - - - - 
 start_StatelessRdnss_StatefullDHCP:
 	make update_if
+	make _start_StatelessRdnss_StatefullDHCP
+
+_start_StatelessRdnss_StatefullDHCP:
 	make reset_configfile
 
 #DHCPv6 v6 address and DNS address
-	make DEVICE=eth0 PREFIX=$(ETH0V6PREFIX) PREFIXLEN=$(ETH0V6PREFIXLEN) conf_radvd_statefullDhcp
-	make DEVICE=eth0 PREFIX=$(ETH0V6PREFIX) PREFIXLEN=$(ETH0V6PREFIXLEN) NAMESERVER=$(ETH0V6ADDR) conf_dhcpd6_statefull
+	make DEVICE=$(SERVER1_DEV) PREFIX=$(SERVER1_V6PREFIX) PREFIXLEN=$(SERVER1_V6PREFIXLEN) conf_radvd_statefullDhcp
+	make DEVICE=$(SERVER1_DEV) PREFIX=$(SERVER1_V6PREFIX) PREFIXLEN=$(SERVER1_V6PREFIXLEN) NAMESERVER=$(SERVER1_V6ADDR) conf_dhcpd6_statefull
 
 #Slacc v6 address / RDNSS DNS server address
-	make DEVICE=eth1 PREFIX=$(ETH1V6PREFIX) PREFIXLEN=$(ETH1V6PREFIXLEN) RDNSSADDR=$(ETH1V6LLAD) conf_radvd_slacc_rdnss
+	make DEVICE=$(SERVER2_DEV) PREFIX=$(SERVER2_V6PREFIX) PREFIXLEN=$(SERVER2_V6PREFIXLEN) RDNSSADDR=$(SERVER2_V6LLAD) conf_radvd_slacc_rdnss
 
-	make DEVICE=eth0 conf_dhcpd4
-	make DEVICE=eth0 OPTIONS="" conf_dhcpd_default
+	make DEVICE=$(SERVER1_DEV) conf_dhcpd4
+	make DEVICE=$(SERVER1_DEV) OPTIONS="" conf_dhcpd_default
 
 	make v6_start_radvd
 	make v6_stop_dhcpd
 	make v4_start_dhcpd
 
+## - - - - - - - - - - - - - - 
 start_StatelessRdnssX2:
 	make update_if
+	make _start_StatelessRdnssX2
+
+_start_StatelessRdnssX2:
 	make reset_configfile
 
 #Slacc v6 address / RDNSS DNS server address
-	make DEVICE=eth0 PREFIX=$(ETH0V6PREFIX) PREFIXLEN=$(ETH0V6PREFIXLEN) RDNSSADDR=$(ETH0V6LLAD) conf_radvd_slacc_rdnss
-	make DEVICE=eth1 PREFIX=$(ETH1V6PREFIX) PREFIXLEN=$(ETH1V6PREFIXLEN) RDNSSADDR=$(ETH1V6LLAD) conf_radvd_slacc_rdnss_slave
-	make DEVICE=eth0 conf_dhcpd4
-	make DEVICE=eth0 OPTIONS="" conf_dhcpd_default
+	make DEVICE=$(SERVER1_DEV) PREFIX=$(SERVER1_V6PREFIX) PREFIXLEN=$(SERVER1_V6PREFIXLEN) RDNSSADDR=$(SERVER1_V6LLAD) conf_radvd_slacc_rdnss
+	make DEVICE=$(SERVER2_DEV) PREFIX=$(SERVER2_V6PREFIX) PREFIXLEN=$(SERVER2_V6PREFIXLEN) RDNSSADDR=$(SERVER2_V6LLAD) conf_radvd_slacc_rdnss_slave
+	make DEVICE=$(SERVER1_DEV) conf_dhcpd4
+	make DEVICE=$(SERVER1_DEV) OPTIONS="" conf_dhcpd_default
 
 	make v6_start_radvd
 	make v6_stop_dhcpd
 	make v4_start_dhcpd
-
-#start_StatelessRdnssX8:
-#	make update_if
-#	make reset_configfile
-#
-##Slacc v6 address / RDNSS DNS server address
-#	make DEVICE=eth0 PREFIX=$(ETH0V6PREFIX) PREFIXLEN=$(ETH0V6PREFIXLEN) RDNSSADDR=$(ETH0V6LLAD) conf_radvd_slacc_rdnss
-#	make DEVICE=eth1 PREFIX=$(ETH1V6PREFIX) PREFIXLEN=$(ETH1V6PREFIXLEN) RDNSSADDR=$(ETH1V6LLAD) conf_radvd_slacc_rdnss
-#	make DEVICE=eth2 PREFIX=$(ETH2V6PREFIX) PREFIXLEN=$(ETH2V6PREFIXLEN) RDNSSADDR=$(ETH2V6LLAD) conf_radvd_slacc_rdnss
-#	make DEVICE=eth3 PREFIX=$(ETH3V6PREFIX) PREFIXLEN=$(ETH3V6PREFIXLEN) RDNSSADDR=$(ETH3V6LLAD) conf_radvd_slacc_rdnss
-#	make DEVICE=eth4 PREFIX=$(ETH4V6PREFIX) PREFIXLEN=$(ETH4V6PREFIXLEN) RDNSSADDR=$(ETH4V6LLAD) conf_radvd_slacc_rdnss
-#	make DEVICE=eth5 PREFIX=$(ETH5V6PREFIX) PREFIXLEN=$(ETH5V6PREFIXLEN) RDNSSADDR=$(ETH5V6LLAD) conf_radvd_slacc_rdnss
-#	make DEVICE=eth6 PREFIX=$(ETH6V6PREFIX) PREFIXLEN=$(ETH6V6PREFIXLEN) RDNSSADDR=$(ETH6V6LLAD) conf_radvd_slacc_rdnss
-#	make DEVICE=eth7 PREFIX=$(ETH7V6PREFIX) PREFIXLEN=$(ETH7V6PREFIXLEN) RDNSSADDR=$(ETH7V6LLAD) conf_radvd_slacc_rdnss
-#	make DEVICE=eth0 conf_dhcpd4
-#	make DEVICE=eth0 OPTIONS="" conf_dhcpd_default
-#
-#	make v6_start_radvd
-#	make v6_stop_dhcpd
-#	make v4_start_dhcpd
 
 ## -------------------------------------------------------------------------
 status_loop:
@@ -158,11 +140,11 @@ status_loop:
 status:
 	-cat status.txt
 	@echo ------------------------------------------ address
-	-ifconfig eth0
+	-ifconfig $(SERVER1_DEV)
 	@echo ------------------------------------------ flags
-	@sudo sysctl net.ipv6.conf.eth0.disable_ipv6
-	@sudo sysctl net.ipv6.conf.eth0.accept_ra
-	@sudo sysctl net.ipv6.conf.eth0.addr_gen_mode
+	@sudo sysctl net.ipv6.conf.$(SERVER1_DEV).disable_ipv6
+	@sudo sysctl net.ipv6.conf.$(SERVER1_DEV).accept_ra
+	@sudo sysctl net.ipv6.conf.$(SERVER1_DEV).addr_gen_mode
 	@echo ------------------------------------------ process
 	-@if [ -f /var/run/radvd.pid ] ; then \
 		ps axuw | grep radvd | grep -v grep; \
@@ -181,45 +163,21 @@ status:
 
 ## ------------------------------------------------------------------------- sub targets
 update_if:
-	-@if [ ! -f /tmp/if.inc ] ; then \
-		make __update_if; \
-	fi
-__update_if:
-	make DEVICE=eth0 v6_disable_ra
-#	make DEVICE=eth1 v6_disable_ra
-#	make DEVICE=eth2 v6_disable_ra
-#	make DEVICE=eth3 v6_disable_ra
-#	make DEVICE=eth4 v6_disable_ra
-#	make DEVICE=eth5 v6_disable_ra
-#	make DEVICE=eth6 v6_disable_ra
-#	make DEVICE=eth7 v6_disable_ra
+#	-@if [ ! -f /tmp/if.inc ] ; then \
+#		make __update_if; \
+#	fi
+#__update_if:
+	make DEVICE=$(SERVER1_DEV) v6_disable_ra
+	make DEVICE=$(SERVER2_DEV) v6_disable_ra
 
-	make ADDRESS=$(ETH0V6ADDR)/$(ETH0V6PREFIXLEN) DEVICE=eth0 v6_set_address
-#	make ADDRESS=$(ETH1V6ADDR)/$(ETH1V6PREFIXLEN) DEVICE=eth1 v6_set_address
-#	make ADDRESS=$(ETH2V6ADDR)/$(ETH2V6PREFIXLEN) DEVICE=eth2 v6_set_address
-#	make ADDRESS=$(ETH3V6ADDR)/$(ETH3V6PREFIXLEN) DEVICE=eth3 v6_set_address
-#	make ADDRESS=$(ETH4V6ADDR)/$(ETH4V6PREFIXLEN) DEVICE=eth4 v6_set_address
-#	make ADDRESS=$(ETH5V6ADDR)/$(ETH5V6PREFIXLEN) DEVICE=eth5 v6_set_address
-#	make ADDRESS=$(ETH6V6ADDR)/$(ETH6V6PREFIXLEN) DEVICE=eth6 v6_set_address
-#	make ADDRESS=$(ETH7V6ADDR)/$(ETH7V6PREFIXLEN) DEVICE=eth7 v6_set_address
+	make ADDRESS=$(SERVER1_V6ADDR)/$(SERVER1_V6PREFIXLEN) DEVICE=$(SERVER1_DEV) v6_set_address
+	make ADDRESS=$(SERVER2_V6ADDR)/$(SERVER2_V6PREFIXLEN) DEVICE=$(SERVER2_DEV) v6_set_address
 
 	@echo -n '' > /tmp/if.inc
-	@echo -n 'ETH0V6LLAD=' >> /tmp/if.inc
-	@ifconfig eth0 | grep fe80 | awk '{print $$2}' >> /tmp/if.inc
-	@echo -n 'ETH1V6LLAD=' >> /tmp/if.inc
-	@ifconfig eth1 | grep fe80 | awk '{print $$2}' >> /tmp/if.inc
-	@echo -n 'ETH2V6LLAD=' >> /tmp/if.inc
-	@ifconfig eth2 | grep fe80 | awk '{print $$2}' >> /tmp/if.inc
-	@echo -n 'ETH3V6LLAD=' >> /tmp/if.inc
-	@ifconfig eth3 | grep fe80 | awk '{print $$2}' >> /tmp/if.inc
-#	@echo -n 'ETH4V6LLAD=' >> /tmp/if.inc
-#	@ifconfig eth4 | grep fe80 | awk '{print $$2}' >> /tmp/if.inc
-#	@echo -n 'ETH5V6LLAD=' >> /tmp/if.inc
-#	@ifconfig eth5 | grep fe80 | awk '{print $$2}' >> /tmp/if.inc
-#	@echo -n 'ETH6V6LLAD=' >> /tmp/if.inc
-#	@ifconfig eth6 | grep fe80 | awk '{print $$2}' >> /tmp/if.inc
-#	@echo -n 'ETH7V6LLAD=' >> /tmp/if.inc
-#	@ifconfig eth7 | grep fe80 | awk '{print $$2}' >> /tmp/if.inc
+	@echo -n 'SERVER1_V6LLAD=' >> /tmp/if.inc
+	@ifconfig $(SERVER1_DEV) | grep fe80 | awk '{print $$2}' >> /tmp/if.inc
+	@echo -n 'SERVER2_V6LLAD=' >> /tmp/if.inc
+	@ifconfig $(SERVER2_DEV) | grep fe80 | awk '{print $$2}' >> /tmp/if.inc
 
 ## -------------------------------------------------------------------------
 reset_configfile:
@@ -291,7 +249,7 @@ v6_start_dhcpd:
 		sudo kill -9 `cat /var/run/dhcpd6.pid`; \
 		sudo rm -f /var/run/dhcpd6.pid; \
 	fi
-	sudo /usr/sbin/dhcpd -6 -q -cf /etc/dhcp/dhcpd6.conf eth0
+	sudo /usr/sbin/dhcpd -6 -q -cf /etc/dhcp/dhcpd6.conf $(SERVER1_DEV)
 
 
 v4_stop_dhcpd:
@@ -308,7 +266,7 @@ v4_start_dhcpd:
 		sudo kill -9 `cat /var/run/dhcpd.pid`; \
 		sudo rm -f /var/run/dhcpd.pid; \
 	fi
-	sudo /usr/sbin/dhcpd -4 -q -cf /etc/dhcp/dhcpd.conf eth0
+	sudo /usr/sbin/dhcpd -4 -q -cf /etc/dhcp/dhcpd.conf $(SERVER1_DEV)
 
 
 # ## ------------------------- DHCP Client target
